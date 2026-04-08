@@ -262,6 +262,40 @@ jobs:
       - run: make
       - run: make test
 
+  downstream:
+    needs: [ubuntu]
+    runs-on: ubuntu-latest
+
+    name: "${{ matrix.module }}"
+
+    env:
+      PERL_USE_UNSAFE_INC: 0
+      AUTOMATED_TESTING: 1
+
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - 'XML::XPath'
+          - 'XML::DOM'
+          - 'XML::Twig'
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: perl -V
+        run: perl -V
+      - name: Install Dependencies
+        uses: perl-actions/install-with-cpm@v1
+        with:
+          cpanfile: "cpanfile"
+      - name: Build and install XML-Parser
+        run: |
+          perl Makefile.PL
+          make
+          sudo make install
+      - name: Install and test ${{ matrix.module }}
+        run: cpm install -g --test --show-build-log-on-failure ${{ matrix.module }}
+
   windows:
     needs: [ubuntu, linux]
     runs-on: windows-latest
